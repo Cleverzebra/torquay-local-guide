@@ -373,6 +373,19 @@ dl.facts { margin:10px 0 0; font-size:.86rem; }
 dl.facts dt { font-weight:700; color:var(--navy); margin-top:8px; }
 dl.facts dd { margin:2px 0 0; color:var(--ink-soft); }
 
+/* this-week engine (computed day-by-day block on the Calendar tab) */
+.twgrid { display:grid; gap:8px; }
+.twday { background:var(--card); border:1px solid var(--line); border-radius:10px;
+  padding:10px 14px; font-size:.9rem; box-shadow:var(--shadow); }
+.twday .twd { font-family:var(--serif); font-weight:700; color:var(--coral); margin-right:8px; }
+.twday.today { border-color:var(--teal);
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--teal) 30%, transparent), var(--shadow); }
+.twday.today .twd::after { content:" · today"; font-family:var(--sans); font-size:.7rem;
+  color:var(--teal); letter-spacing:.05em; }
+.twday .twq { color:var(--ink-soft); }
+.card.nowm { border-color:var(--coral);
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--coral) 35%, transparent), var(--shadow); }
+
 </style>
 </head>
 <body>
@@ -401,7 +414,7 @@ dl.facts dd { margin:2px 0 0; color:var(--ink-soft); }
   <section class="hero">
     <div class="wrap">
       <p class="eyebrow">Built for one family · Torquay, Victoria</p>
-      <h1>The second layer of the coast you already know</h1>
+      <h1>What to do around Torquay, when you already live there</h1>
       <p>Not a visitor's guide. This is for a family that's lived here for years: the things that opened while nobody was looking, the tiny-town circuits, the dates worth planning around, and the rules nobody can ever remember. Organised by how far you actually have to drive.</p>
       <p class="nowline" id="nowline"></p>
     </div>
@@ -412,7 +425,7 @@ dl.facts dd { margin:2px 0 0; color:var(--ink-soft); }
     <section class="section" id="home-start">
       <p class="kicker">Start here</p>
       <h2><span class="ic">🧭</span> Pick a person, or pick a mood</h2>
-      <p class="lede">Every tab filters by price, distance, kid-friendliness, and whether the dog can come. The calendar highlights the current month by itself, every time this page opens.</p>
+      <p class="lede">Every tab filters by price, distance, kid-friendliness, and whether the dog can come. The Calendar tab rebuilds this week day by day, and the current month highlights itself, every time this page opens.</p>
 
       <div class="pickgrid">
         <a class="pick" href="#aud"><span class="pic">🌿</span><span class="plabel">For Audrey</span><span class="small">Pilates auditions, the new bathhouse scene, hot-springs missions, and the craft-and-jewellery year.</span><span class="parrow">Open →</span></a>
@@ -1839,8 +1852,15 @@ dl.facts dd { margin:2px 0 0; color:var(--ink-soft); }
     <div class="guidehead">
       <p class="kicker">Guide 9</p>
       <h2 class="guidetitle" style="font-family:var(--serif);color:var(--navy)">The year, month by month</h2>
-      <p class="homeintro">August 2026 through July 2027: what's on, what's in season, and what to book before it's gone. The home page highlights the current month automatically each time the guide is opened.</p>
+      <p class="homeintro">August 2026 through July 2027: what's on, what's in season, and what to book before it's gone. The "this week" block below rebuilds itself from the dated events and the weekly rhythms every time the page opens, on Torquay's clock.</p>
     </div>
+
+    <section class="section" id="mon-thisweek">
+      <p class="kicker">Computed fresh on every visit</p>
+      <h2><span class="ic">📆</span> This week, day by day</h2>
+      <div class="twgrid" id="twgrid"></div>
+      <p class="vnote">Built from the dated list below plus the standing weekly rhythms (markets, parkrun, dip mornings). A tilde means the date is pattern-based, not organiser-confirmed. Quiet days show the standing options; they're never truly empty here.</p>
+    </section>
 
     <section class="section" id="mon-detail">
       <div class="grid cols-2">
@@ -1986,6 +2006,127 @@ dl.facts dd { margin:2px 0 0; color:var(--ink-soft); }
     // calendar starts at August (index 7)
     var idx=(m-7+12)%12;
     if(mc[idx]) mc[idx].classList.add('now');
+  }catch(e){}
+
+  // ===== This Week engine: rebuilt from dated events + weekly rhythms on every load =====
+  try{
+    // dated events, Aug 2026 - Jul 2027 (~ = pattern-based, not organiser-confirmed)
+    var EV={
+      '2026-08-01':['Surf Coast Arts Trail day 1, shire-wide open studios 10–4 (free) + After Hours tonight'],
+      '2026-08-02':['Surf Coast Arts Trail day 2, 10–4 (free)'],
+      '2026-08-10':['Meredith ballot closes 10:34pm — mmf.com.au'],
+      '2026-08-14':['The Sound Doctor: Belair Lip Bombs, Anglesea Memorial Hall'],
+      '2026-08-18':['Surf Coast Trail Marathon 2027 rego opens'],
+      '2026-08-27':['A La Grecque reopens for spring (Aireys)'],
+      '2026-09-12':['Surf Coast Century ultra, Anglesea'],
+      '2026-09-13':["Amy's Gran Fondo: Great Ocean Road closed for bikes, Lorne"],
+      '2026-09-19':['ANGAIR Wildflower Weekend day 1, Anglesea','School holidays begin (to Oct 4)'],
+      '2026-09-20':['ANGAIR Wildflower Weekend day 2'],
+      '2026-09-25':['Grand Final Friday (public holiday)','The Sound Doctor: The Lazy Eyes, Anglesea'],
+      '2026-10-03':['Day Out With Thomas, Bellarine Railway'],
+      '2026-10-04':['Day Out With Thomas, final day','Last day of school holidays'],
+      '2026-10-15':['Royal Geelong Show opens (to Sun 18)'],
+      '2026-10-16':['Royal Geelong Show'],'2026-10-17':['Royal Geelong Show'],'2026-10-18':['Royal Geelong Show, final day'],
+      '2026-10-21':['Geelong Cup day: Rollerway open skate 12–4:30'],
+      '2026-10-31':['Lorne Foreshore Market (Cup weekend) ~'],
+      '2026-11-01':['Anglesea Riverbank Market, season opener ~'],
+      '2026-11-02':['Pier to Pub entries open — sells out, enter today'],
+      '2026-11-03':['Melbourne Cup Day (public holiday)'],
+      '2026-11-06':['Birregurra Art Show gala night ($20)'],
+      '2026-11-07':['Birregurra Art Show 10–5','The Sound Doctor, Anglesea'],
+      '2026-11-08':['Birregurra Art Show 10–4'],
+      '2026-11-27':['Queenscliff Music Festival day 1','Geelong Revival ~'],
+      '2026-11-28':['Queenscliff Music Festival day 2','Geelong Revival ~'],
+      '2026-11-29':['Queenscliff Music Festival, final day','Geelong Revival ~'],
+      '2026-12-11':['Meredith Music Festival day 1'],'2026-12-12':['Meredith day 2'],'2026-12-13':['Meredith, out by 1pm Monday','Piccadilly Christmas Market, Geelong'],
+      '2026-12-16':['Carols by the Sea, Elephant Walk ~'],
+      '2026-12-18':['Term 4 ends'],
+      '2026-12-25':['Christmas Day'],'2026-12-26':['Boxing Day'],'2026-12-28':['Boxing Day substitute holiday'],
+      '2026-12-31':['NYE: Geelong waterfront fireworks 9:30pm + midnight; Lorne pier show if funded ~'],
+      '2027-01-01':["New Year's Day"],
+      '2027-01-02':['Danger 1000 ocean swim, Jan Juc ~'],
+      '2027-01-08':['Mountain to Surf, Lorne (8km)'],
+      '2027-01-09':['Pier to Pub, Lorne','Portarlington Mussel Festival'],
+      '2027-01-23':['Lorne Foreshore Market (Australia Day weekend) ~'],
+      '2027-01-26':['Australia Day (public holiday)'],
+      '2027-01-28':['Term 1 begins'],
+      '2027-02-21':['Festival of Glass, Drysdale ~'],
+      '2027-02-23':['Avalon Airshow week begins: flypasts over the coast'],
+      '2027-02-26':['Avalon Airshow public day 1'],
+      '2027-02-27':['Pako Festa (free), Geelong West','Avalon Airshow public day 2','Otway Odyssey MTB, Forrest'],
+      '2027-02-28':['Avalon Airshow, final day','Otway Gravel Grind, Forrest'],
+      '2027-03-05':['Port Fairy Folk Festival (50th) opens'],
+      '2027-03-06':['Golden Plains day 1','Port Fairy continues'],
+      '2027-03-07':['Golden Plains day 2','Port Fairy continues'],
+      '2027-03-08':['Labour Day (public holiday)','Golden Plains + Port Fairy final days'],
+      '2027-03-12':['Aireys Inlet Music Festival day 1'],
+      '2027-03-13':['Aireys Inlet Music Festival day 2'],
+      '2027-03-14':['Aireys Inlet Music Festival, final day'],
+      '2027-03-21':['Deans Marsh Festival ~'],
+      '2027-03-25':['Term 1 ends; holidays to Apr 11'],
+      '2027-03-26':['Good Friday; Rip Curl Pro window opens around now ~'],
+      '2027-03-27':['Easter Saturday: Lorne Foreshore Market ~'],
+      '2027-03-28':['Easter Sunday: Anglesea Riverbank Market ~'],
+      '2027-03-29':['Easter Monday'],
+      '2027-04-25':['Anzac Day (falls Sunday, no substitute)'],
+      '2027-05-01':['Great Ocean & Otway Classic Ride from Torquay ~'],
+      '2027-05-15':['Great Ocean Road Running Festival day 1'],
+      '2027-05-16':['GOR Running Festival: closed-road marathon day'],
+      '2027-06-05':['Run Forrest trail runs ~'],
+      '2027-06-11':['National Celtic Festival, Portarlington, opens ~'],
+      '2027-06-12':['Celtic Festival ~','Lorne Foreshore Market ~'],
+      '2027-06-14':["King's Birthday (public holiday); Celtic Festival final day ~"],
+      '2027-06-20':['Surf Coast Trail Marathon, Torquay–Fairhaven ~'],
+      '2027-06-25':['Term 2 ends; holidays to Jul 11']
+    };
+    function pad(n){return (n<10?'0':'')+n;}
+    function key(d){return d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate());}
+    function nth(d){return Math.floor((d.getUTCDate()-1)/7)+1;}
+    function lastOfMonth(d){var e=new Date(d); e.setUTCDate(d.getUTCDate()+7); return e.getUTCMonth()!==d.getUTCMonth();}
+    // weekly rhythms; mo = month 0-11
+    function rhythms(d){
+      var dow=d.getUTCDay(), mo=d.getUTCMonth(), out=[];
+      if(dow===6){
+        out.push('Torquay Farmers Market 8:30–1');
+        out.push('parkrun 8am, Fisherman’s Beach');
+        if(nth(d)===1 && mo!==0) out.push('Golden Plains Farmers’ Market, Bannockburn 8:30–12:30');
+        if(nth(d)===3) out.push('Bellarine Farmers’ Market, Ocean Grove 9–1');
+        if(mo>=9||mo<=4) out.push('Blues Train night (most Saturdays, book ahead)');
+        if(d<=new Date(Date.UTC(2026,7,29))) out.push('Winter Glow at Adventure Park 3–9pm');
+        out.push('Bellarine Farmgate Market, Drysdale 9–2');
+      }
+      if(dow===0){
+        out.push('Point Lonsdale lighthouse climbs 9:30–1');
+        if(nth(d)===3 && (mo>=8||mo<=3)) out.push('Cowrie Market, Elephant Walk 9–2');
+        if(nth(d)===1 && (mo>=9||mo<=3)) out.push('Rotary Ocean Grove Market 9–1');
+        if(nth(d)===2){ out.push('Point Lonsdale PS Market 9–2'); out.push('Birregurra market'); }
+        if(lastOfMonth(d) && (mo>=8||mo<=4)) out.push('Queenscliffe Community Market');
+        out.push('Bellarine Farmgate Market, Drysdale 10–1');
+      }
+      if(dow===3) out.push('Wednesday Ocean Waders dip ~sunrise (time on their Facebook)');
+      return out;
+    }
+    var tw=document.getElementById('twgrid');
+    if(tw){
+      var p=new Intl.DateTimeFormat('en-CA',{timeZone:'Australia/Melbourne',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+      var t=new Date(p+'T00:00:00Z');
+      var names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      var mons=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      for(var i=0;i<7;i++){
+        var d=new Date(t); d.setUTCDate(t.getUTCDate()+i);
+        var items=(EV[key(d)]||[]).concat(rhythms(d));
+        var div=document.createElement('div');
+        div.className='twday'+(i===0?' today':'');
+        var label='<span class="twd">'+names[d.getUTCDay()]+' '+d.getUTCDate()+' '+mons[d.getUTCMonth()]+'</span>';
+        div.innerHTML=label+(items.length?items.join(' · '):'<span class="twq">Quiet by the calendar. Beach, walk tab, or the eats list.</span>');
+        tw.appendChild(div);
+      }
+      // badge the current month card on this tab
+      var monLabel=['January','February','March','April','May','June','July','August','September','October','November','December'][t.getUTCMonth()]+' '+t.getUTCFullYear();
+      document.querySelectorAll('#mon-detail .card h4').forEach(function(h){
+        if(h.textContent.indexOf(monLabel)===0) h.parentElement.classList.add('nowm');
+      });
+    }
   }catch(e){}
 
   function applyFilter(){
